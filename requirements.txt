@@ -6,4 +6,4 @@ python-dotenv
 langchain-pinecone
 langchain-community
 
-- e.
+-e .
