@@ -5,5 +5,7 @@ pypdf
 python-dotenv
 langchain-pinecone
 langchain-community
+flask
+flask-cors
 
 -e .

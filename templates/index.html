@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthCare AI - Medical Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <h1>HealthCare AI</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <section class="hero">
+            <h2>Your Trusted Medical AI Assistant</h2>
+            <p>Ask about symptoms, treatments, or general health advice with our AI-powered chatbot.</p>
+        </section>
+
+        <!-- Chatbot Toggle Button -->
+        <button class="chatbot-toggler" aria-label="Toggle Chatbot">
+            <i class="fas fa-message"></i>
+            <i class="fas fa-times"></i>
+        </button>
+
+        <!-- Chatbot Container -->
+        <div class="chatbot">
+            <header>
+                <h2>Medical AI Assistant</h2>
+                <button class="close-btn" aria-label="Close Chatbot"><i class="fas fa-times"></i></button>
+            </header>
+            <ul class="chatbox">
+                <li class="chat incoming">
+                    <i class="fas fa-robot"></i>
+                    <div class="message-content">
+                        <p>Welcome to HealthCare AI! 👋</p>
+                        <p>Ask about symptoms, treatments, or medical advice.</p>
+                        <p><strong>Note:</strong> This is not a substitute for professional medical advice.</p>
+                    </div>
+                </li>
+            </ul>
+            <div class="chat-input">
+                <textarea placeholder="Type your health question (e.g., What causes migraines?)" spellcheck="false" required aria-label="Message Input"></textarea>
+                <button id="send-btn" aria-label="Send Message"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 HealthCare AI. All rights reserved. | <a href="#privacy">Privacy Policy</a> | <a href="#terms">Terms of Service</a></p>
+    </footer>
+
+    <script>
+        const chatbotToggler = document.querySelector(".chatbot-toggler");
+        const closeBtn = document.querySelector(".close-btn");
+        const chatbox = document.querySelector(".chatbox");
+        const chatInput = document.querySelector(".chat-input textarea");
+        const sendChatBtn = document.querySelector("#send-btn");
+
+        let userMessage = null;
+        const inputInitHeight = chatInput.scrollHeight;
+
+        const parseMessage = (message) => {
+            // Convert markdown-like formatting to HTML
+            let formatted = message
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                .replace(/\* (.*?)(?=\n|$)/g, '<li>$1</li>'); // Bullets to list items
+            
+            // Wrap bullet points in <ul> if present
+            if (formatted.includes('<li>')) {
+                formatted = formatted.replace(/(<li>.*?(?:<\/li>)+)/g, '<ul>$1</ul>');
+            }
+            
+            return formatted;
+        }
+
+        const createChatLi = (message, className, isLoading = false) => {
+            const chatLi = document.createElement("li");
+            chatLi.classList.add("chat", className);
+            let chatContent = className === "outgoing" 
+                ? `<div class="message-content"><p></p></div>` 
+                : `<i class="fas fa-robot"></i><div class="message-content"><p></p></div>`;
+            if (isLoading) {
+                chatContent = `<i class="fas fa-robot"></i><div class="message-content"><div class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>`;
+            }
+            chatLi.innerHTML = chatContent;
+            if (!isLoading) {
+                chatLi.querySelector(".message-content p").innerHTML = parseMessage(message);
+            }
+            return chatLi;
+        }
+
+        const generateResponse = (chatElement) => {
+            const messageElement = chatElement.querySelector(".message-content p") || chatElement.querySelector(".typing-indicator");
+            fetch('/get_response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: userMessage
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (messageElement.classList.contains("typing-indicator")) {
+                    messageElement.outerHTML = `<p>${parseMessage(data.response)}</p>`;
+                } else {
+                    messageElement.innerHTML = parseMessage(data.response);
+                }
+            })
+            .catch(() => {
+                if (messageElement.classList.contains("typing-indicator")) {
+                    messageElement.outerHTML = `<p class="error">Sorry, I couldn't process your request. Please try again.</p>`;
+                } else {
+                    messageElement.classList.add("error");
+                    messageElement.innerHTML = "Sorry, I couldn't process your request. Please try again.";
+                }
+            })
+            .finally(() => chatbox.scrollTo(0, chatbox.scrollHeight));
+        }
+
+        const handleChat = () => {
+            userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            chatInput.value = "";
+            chatInput.style.height = `${inputInitHeight}px`;
+
+            chatbox.appendChild(createChatLi(userMessage, "outgoing"));
+            chatbox.scrollTo(0, chatbox.scrollHeight);
+
+            setTimeout(() => {
+                const incomingChatLi = createChatLi(null, "incoming", true);
+                chatbox.appendChild(incomingChatLi);
+                chatbox.scrollTo(0, chatbox.scrollHeight);
+                generateResponse(incomingChatLi);
+            }, 600);
+        }
+
+        chatInput.addEventListener("input", () => {
+            chatInput.style.height = `${inputInitHeight}px`;
+            chatInput.style.height = `${chatInput.scrollHeight}px`;
+        });
+
+        chatInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 800) {
+                e.preventDefault();
+                handleChat();
+            }
+        });
+
+        sendChatBtn.addEventListener("click", handleChat);
+        closeBtn.addEventListener("click", () => document.body.classList.remove("show-chatbot"));
+        chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
+    </script>
+</body>
+</html>
