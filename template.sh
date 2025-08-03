@@ -3,6 +3,8 @@ mkdir -p src
 mkdir -p research
 mkdir -p data
 mkdir -p config
+mkdir -p templates
+mkdir -p static
 
 touch src/__init__.py
 touch src/document_loader.py
@@ -18,6 +20,10 @@ touch research/experiments.ipynb
 touch research/trials.ipynb
 touch config/settings.py
 touch config/__init__.py
+touch templates/index.html
+touch templates/base.html
+touch static/style.css
+touch static/script.js
 touch .env
 touch setup.py
 touch app.py
