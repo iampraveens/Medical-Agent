@@ -17,6 +17,7 @@ touch src/chain.py
 touch research/experiments.ipynb
 touch research/trials.ipynb
 touch config/settings.py
+touch config/__init__.py
 touch .env
 touch setup.py
 touch app.py
