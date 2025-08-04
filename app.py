@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import os
 from flask import Flask, render_template, request, jsonify
 from src.embeddings import get_embeddings
 from src.retrieval import load_existing_vector_store, create_retriever
@@ -8,6 +9,11 @@ from src.llm_inference import get_chat_model
 from src.prompts import get_medical_prompt
 from src.chain import create_document_chain, create_full_retrieval_chain
 from config.settings import Config
+
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
+os.environ["LANGSMITH_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
+os.environ["LANGCHAIN_ENDPOINT"] = os.getenv("LANGCHAIN_ENDPOINT")
 
 
 app = Flask(__name__)
